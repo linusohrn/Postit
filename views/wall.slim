@@ -1,0 +1,11 @@
+header
+    h1 PostIt
+
+form action="/new" class="note-post"method="post"
+    span New note:
+    textarea rows="10" cols="20" class="post-box" name="content"
+    button type="submit" class="post-box" Post it!
+
+main
+    -for note in @notes
+        == slim :'notes/note', locals: {note: note}

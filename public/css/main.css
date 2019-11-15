@@ -1,0 +1,30 @@
+body{
+    margin: 0;
+    padding: 0;
+}
+
+.wrapper{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+div.note{
+    margin: 2%;
+    background-color: hotpink;
+    width: 300px;
+    height: 250px;
+}
+
+p.tag{
+    font-size: 12px;
+}
+
+form.note-post{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    width: 300px;
+}
+
