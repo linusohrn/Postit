@@ -120,9 +120,9 @@ class Tags < Handler_db
 	    end
 	    #p tag_ids
 	tag_ids.each do |id|
-		#p id
+		p id
 		tag_names << @db.execute("SELECT t.name FROM tags AS t INNER JOIN message_tag AS mt ON t.id = mt.tag_id WHERE mt.tag_id = #{id}").first.first[1]
-	p @db.execute("SELECT t.name FROM tags AS t INNER JOIN message_tag AS mt ON t.id = mt.tag_id WHERE mt.tag_id = #{id}")
+	#p @db.execute("SELECT t.name FROM tags AS t INNER JOIN message_tag AS mt ON t.id = mt.tag_id WHERE mt.tag_id = #{id}")
 	end
 	return tag_names
     end

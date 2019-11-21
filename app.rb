@@ -8,15 +8,15 @@ class App < Sinatra::Base
         Users.connect
         Messages.connect
         Message_Tags.connect
+        Tags.connect
         super
     end
     
-    before '/wall*' do
-        if !session[:user_id]
-            redirect '/'
-        end
-        @notes = Messages.get_all_message_tag_user
-    end
+    # before '/wall*' do
+    #     if !session[:user_id]
+    #         redirect '/'
+    #     end
+    # end
     
     get '/' do 
         @failed = session[:login]
@@ -25,6 +25,23 @@ class App < Sinatra::Base
     end
 
     get '/wall' do 
+        
+        @notes = Messages.get_all_message_tag_user
+        # p @notes
+        @notes.each do |note|
+            # p note
+            # p note['id']
+            note['tags'] = Tags.get_tags_by_message_id(note['id']).to_a.first
+            # p note['tags']
+        end
+        # @tags = Tags.get_tags_by_message_id
+        # puts @tags
+        # puts "#####################################"
+        # p @notes
+        # Messages.get_all_message_tag_user.each do |temp|
+        #     p temp['name']
+        # end
+        # puts "#####################################"
         slim :wall
     end
     

@@ -8,4 +8,4 @@ form action="/new" class="note-post"method="post"
 
 main
     -for note in @notes
-        == slim :'notes/note', locals: {note: note}
+        == slim :'notes/note', locals: {note: note, tags: @tags}

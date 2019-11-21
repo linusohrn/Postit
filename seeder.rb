@@ -57,7 +57,7 @@ class Seeder
                         @db.execute('INSERT INTO users (usn, pwd, privileges) VALUES (?,?,?)', "test2", "$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", 0)
                         @db.execute('INSERT INTO users (usn, pwd, privileges) VALUES (?,?,?)', "test3", "$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", 0)
                         @db.execute('INSERT INTO messages (content, user_id) VALUES (?,?)', "Admin Announcement", 1)
-                        @db.execute('INSERT INTO messages (content, refrence_id, user_id) VALUES (?,?,?)', "Test Reply", 1, 2)
+                        @db.execute('INSERT INTO messages (content, refrence_id, user_id) VALUES (?,?,?)', "Testing", 1, 2)
                         @db.execute('INSERT INTO messages (content, refrence_id, user_id) VALUES (?,?,?)', "Test Reply", 1, 3)
                         @db.execute('INSERT INTO messages (content, refrence_id, user_id) VALUES (?,?,?)', "Test Reply", 2, 4)
                         @db.execute('INSERT INTO tags (name) VALUES (?)', "Admin post")
