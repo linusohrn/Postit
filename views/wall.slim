@@ -1,11 +1,12 @@
 header
     h1 PostIt
 
-form action="/new" class="note-post"method="post"
-    span New note:
+form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="post"
+    span New message:
     textarea rows="10" cols="20" class="post-box" name="content"
+    number min="0" max="#{@messages.length}"
     button type="submit" class="post-box" Post it!
 
 main
-    -for note in @notes
-        == slim :'notes/note', locals: {note: note, tags: @tags}
+    -for message in @messages
+        == slim :'messages/message', locals: {message: message, tags: @tags}

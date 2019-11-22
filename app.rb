@@ -1,4 +1,5 @@
 require_relative('handler_db.rb')
+require 'pp'
 system('cls')
 class App < Sinatra::Base
     
@@ -23,25 +24,24 @@ class App < Sinatra::Base
         slim :index
         
     end
-
-    get '/wall' do 
-        
-        @notes = Messages.get_all_message_tag_user
-        # p @notes
-        @notes.each do |note|
-            # p note
-            # p note['id']
-            note['tags'] = Tags.get_tags_by_message_id(note['id']).to_a.first
-            # p note['tags']
+    
+    get '/users/:user_id/wall' do 
+        m_tag={}
+        pp params[:user_id]
+        @messages = Messages.get_all_message_and_usn
+        tags = Tags.get_tags_name_and_message_id()
+        # p tags
+        tags.each do |tag|
+            if !m_tag[tag['id']].nil?
+                m_tag[tag['id']] << tag['tagname']
+            else
+            m_tag[tag['id']] = [tag['tagname']]
+            end
         end
-        # @tags = Tags.get_tags_by_message_id
-        # puts @tags
-        # puts "#####################################"
-        # p @notes
-        # Messages.get_all_message_tag_user.each do |temp|
-        #     p temp['name']
-        # end
-        # puts "#####################################"
+        @messages.each do |message|
+            message['tags'] = m_tag[message['id']]
+        end
+        @messages = @messages.uniq
         slim :wall
     end
     
@@ -54,20 +54,22 @@ class App < Sinatra::Base
         if BCrypt::Password.new(pwd_hash['pwd']) == params[:password]
             session[:user_id] = pwd_hash['id']
             session[:login] = true
-            redirect '/wall'
+            redirect "/users/#{session[:user_id]}/wall"
         else
             session[:login] = false
             redirect '/'
-        end
-        
-        
-        
+        end  
     end
-
-    post '/new/?' do
-
-        Messages.add(params[:content], session[:user_id])
-        redirect '/wall'
+    
+    post '/users/:user_id/wall/new' do
+        pp params[:user_id]
+        if params[:user_id] == 1
+            Messages.create(params[:content], params[:user_id], [])
+            
+        end
+        # pp params[:user_id]
+        pp params
+        redirect "/users/#{params[:user_id]}/wall"
     end
     
     

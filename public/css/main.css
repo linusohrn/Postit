@@ -10,7 +10,7 @@ body{
     flex-direction: column;
 }
 
-div.note{
+div.message{
     margin: 2%;
     background-color: hotpink;
     width: 300px;
@@ -21,7 +21,7 @@ p.tag{
     font-size: 12px;
 }
 
-form.note-post{
+form.message-post{
     display: flex;
     justify-content: center;
     flex-direction: column;
