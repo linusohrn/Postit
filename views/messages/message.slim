@@ -1,6 +1,13 @@
 .message
-    h3= "#{message['id']} / #{message['refrence_id']}"
-    h4= "#{message['usn']}"
-    p= "#{message['content']}"
-    p.tag= "#{message['tags']}"
-
+    h3.ids.m.essential= "#{message['id']} / #{message['refrence_id']}"
+    h4.usn.m.essential= "#{message['usn']}"
+    p.cnt.m.essential= "#{message['content']}"
+    .tags.m
+        -if !message['tags'].nil? 
+            -message['tags'].each do |tag|
+                p.tag.m= "#{tag}"
+    form.reply.m action="/users/#{params[:user_id]}/wall/#{message['id']}/reply" class="replybut" method="post"
+        button type="submit" Reply
+    -if @user == @admin_id
+        form.adminbutton.m action="/users/#{params[:user_id]}/wall/#{message['id']}/delete" class="deletebut" method="post"
+            button type="submit" delete!

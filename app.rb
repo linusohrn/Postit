@@ -8,40 +8,54 @@ class App < Sinatra::Base
     def initialize
         Users.connect
         Messages.connect
-        Message_Tags.connect
+        Taggings.connect
         Tags.connect
+        @admin_id = "1"
         super
     end
     
-    # before '/wall*' do
-    #     if !session[:user_id]
-    #         redirect '/'
-    #     end
-    # end
-    
-    get '/' do 
-        @failed = session[:login]
-        slim :index
-        
+    before '/users*' do
+        if !session[:user_id]
+            redirect '/'
+        end
+    end
+
+    before '/users/:user_id/wall' do
+        # pp session[:user_id]
+        # pp params[:user_id]
+        if session[:user_id] != params[:user_id].to_i
+        redirect "/users/#{session[:user_id]}/wall"
+        end
     end
     
-    get '/users/:user_id/wall' do 
+    get '/' do
+        @failed = session[:login]
+        slim :index
+    end
+    
+    get '/users/:user_id/wall' do
         m_tag={}
-        pp params[:user_id]
-        @messages = Messages.get_all_message_and_usn
+        pp params
+        @refrence_id = params.key(nil)
+        @messages = Messages.get_all_message_and_usn()
+        # pp @messages
         tags = Tags.get_tags_name_and_message_id()
         # p tags
+        @user = params[:user_id]
+        
         tags.each do |tag|
             if !m_tag[tag['id']].nil?
                 m_tag[tag['id']] << tag['tagname']
             else
-            m_tag[tag['id']] = [tag['tagname']]
+                m_tag[tag['id']] = [tag['tagname']]
             end
         end
         @messages.each do |message|
             message['tags'] = m_tag[message['id']]
         end
-        @messages = @messages.uniq
+        
+        @messages.uniq!
+        # pp @messages
         slim :wall
     end
     
@@ -62,16 +76,20 @@ class App < Sinatra::Base
     end
     
     post '/users/:user_id/wall/new' do
-        pp params[:user_id]
-        if params[:user_id] == 1
-            Messages.create(params[:content], params[:user_id], [])
-            
-        end
-        # pp params[:user_id]
         pp params
+        tag_arr = [params[:anc], params[:rln], params[:adp]]
+        # pp tag_arr
+        Messages.create(params[:content], params[:user_id], tag_arr, params['refrence_id'])
         redirect "/users/#{params[:user_id]}/wall"
     end
     
+    post '/users/:user_id/wall/:message_id/delete' do 
+        Messages.delete_by_id(params[:message_id])
+        Taggings.delete_by_m_id(params[:message_id])
+        redirect "/users/#{params[:user_id]}/wall"
+    end
     
-    
+    post '/users/:user_id/wall/:message_id/reply' do
+        redirect "/users/#{params[:user_id]}/wall?#{params[:message_id]}"
+    end
 end
