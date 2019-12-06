@@ -1,5 +1,6 @@
 .message
-    h3.ids.m.essential= "#{message['id']} / #{message['refrence_id']}"
+    a.ids.m.essential href="?message_filter_id=#{message['id']}"= "#{message['id']}"
+    a.ids.m.essential href="?message_filter_id=#{message['refrence_sid']}"= "#{message['refrence_id']}"
     h4.usn.m.essential= "#{message['usn']}"
     p.cnt.m.essential= "#{message['content']}"
     .tags.m

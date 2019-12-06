@@ -98,6 +98,10 @@ class Messages < Handler_db
         
         @db.execute("SELECT m.id, m.content, m.refrence_id, u.usn FROM messages AS m LEFT JOIN taggings AS mt ON m.id = mt.message_id INNER JOIN users AS u ON m.user_id = u.id;")
     end
+
+    def self.get_all_message_and_usn_filter()
+
+    end
     
 end
 

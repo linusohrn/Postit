@@ -19,12 +19,12 @@ class App < Sinatra::Base
             redirect '/'
         end
     end
-
+    
     before '/users/:user_id/wall' do
         # pp session[:user_id]
         # pp params[:user_id]
         if session[:user_id] != params[:user_id].to_i
-        redirect "/users/#{session[:user_id]}/wall"
+            redirect "/users/#{session[:user_id]}/wall"
         end
     end
     
@@ -33,14 +33,22 @@ class App < Sinatra::Base
         slim :index
     end
     
-    get '/users/:user_id/wall' do
+    get '/users/:user_id/wall?' do
         m_tag={}
-        pp params
-        @refrence_id = params.key(nil)
-        @messages = Messages.get_all_message_and_usn()
-        # pp @messages
+        if params.key?(:reply_id); @refrence_id = params[:reply_id] end
+        if params.key?(:tag_filter_id); tag_filter_id = params[:tag_filter_id] end
+        if params.key?(:message_filter_id); message_filter_id = params[:message_filter_id] end
+        if params.key?(:tag_filter_id)
+            filter_id = params[:tag_filter_id]
+        elsif params.key?(:message_filter_id)
+            filter_id = params[:tag_filter_id]
+        end
+        if !filter_id.nil?
+            @messages = Messages.get_all_message_and_usn_filter(filter_id)
+        else
+            @messages = Messages.get_all_message_and_usn()
+        end
         tags = Tags.get_tags_name_and_message_id()
-        # p tags
         @user = params[:user_id]
         
         tags.each do |tag|
@@ -90,6 +98,12 @@ class App < Sinatra::Base
     end
     
     post '/users/:user_id/wall/:message_id/reply' do
-        redirect "/users/#{params[:user_id]}/wall?#{params[:message_id]}"
+        reply_id = params[:message_id]
+        redirect "/users/#{params[:user_id]}/wall?reply_id=#{reply_id}"
+    end
+    
+    post '/users/:user_id/wall/filter' do
+        tag_filter_id = params[:filter]
+        redirect "/users/#{params[:user_id]}/wall?tag_filter_id=#{tag_filter_id}"
     end
 end
