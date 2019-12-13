@@ -3,14 +3,8 @@ body{
     padding: 0%;
 }
 
-.wrapper{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
 div.message{
+    margin-left: 5%;
     margin-top: 5%;
     background-color: hotpink;
     width: 300px;
@@ -23,7 +17,13 @@ div.message{
     "tags tags"
     "reply adminbuttons";
 	grid-template-rows: 1fr 1fr 50fr 1fr 1fr;
-       grid-templare-columns: 1fr 1fr;	
+    grid-template-columns: 1fr 1fr;	
+}
+
+main{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 
 p.tag{

@@ -1,0 +1,12 @@
+header
+    h1 PostIt
+
+a href="/users/:user_id/wall" go back
+
+.settings
+    forms action="update"
+        span username:
+        input type='text' name='username' value="#{@user['usn']}"
+        span password:
+        input type='password' name='password' value=""
+        button type="submit" update

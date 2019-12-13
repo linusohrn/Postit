@@ -27,7 +27,7 @@ class Users < Handler_db
     end
     
     def self.get_by_id(int, cell)
-        get_cells_by(cell,'id',int)
+        get_cells_by(cell,'id', int)
     end
     
     def self.get_by_usn(name, cell)
@@ -61,14 +61,17 @@ class Messages < Handler_db
             @db.execute('INSERT INTO messages (content, user_id) VALUES (?,?)', content, user_id)
         end
         last_m_id = @db.execute("SELECT id FROM messages ORDER BY id desc LIMIT 1").first['id']
-        tag_arr.each do |tag|
-            if !tag.nil?
-                @db.execute("INSERT INTO taggings (message_id, tag_id) VALUES (?,?)", last_m_id, tag.to_i)
+        if !tag_arr.nil?
+            tag_arr.each do |tag|
+                # pp tag
+                if !tag.nil?
+                    @db.execute("INSERT INTO taggings (message_id, tag_id) VALUES (?,?)", last_m_id, tag.to_i)
+                end
             end
         end
         @db.commit
     end
-
+    
     def self.delete_by_id(id)
         @db.execute("DELETE FROM messages WHERE id = (?)", id)
     end
@@ -98,9 +101,13 @@ class Messages < Handler_db
         
         @db.execute("SELECT m.id, m.content, m.refrence_id, u.usn FROM messages AS m LEFT JOIN taggings AS mt ON m.id = mt.message_id INNER JOIN users AS u ON m.user_id = u.id;")
     end
-
-    def self.get_all_message_and_usn_filter()
-
+    
+    def self.get_all_message_and_usn_filter(id, type)
+        if type == "message"
+            @db.execute("SELECT m.id, m.content, m.refrence_id, u.usn FROM messages AS m LEFT JOIN taggings AS mt ON m.id = mt.message_id INNER JOIN users AS u ON m.user_id = u.id WHERE m.id = (?) OR m.refrence_id = (?)", id, id)
+        elsif type == "tag"
+            @db.execute("SELECT m.id, m.content, m.refrence_id, u.usn FROM messages AS m LEFT JOIN taggings AS mt ON m.id = mt.message_id INNER JOIN users AS u ON m.user_id = u.id WHERE mt.tag_id = (?);", id)
+        end
     end
     
 end
@@ -116,7 +123,7 @@ class Taggings < Handler_db
     def self.add(message_id, tag_id)
         @db.execute("INSERT INTO taggings message_id, tag_id VALUES (?,?)", message_id, tag_id)
     end
-
+    
     def self.delete_by_m_id(id)
         @db.execute("DELETE FROM taggings WHERE message_id = (?)", id)
     end
@@ -129,6 +136,10 @@ class Tags < Handler_db
     
     def self.connect
         super
+    end
+    
+    def self.get_all
+        @db.execute("SELECT * FROM tags")
     end
     
     def self.get_tags_name_and_message_id(message_id=nil)
@@ -151,6 +162,7 @@ class Tags < Handler_db
         end
         
     end
+    
     
     
     

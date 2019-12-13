@@ -33,22 +33,36 @@ class App < Sinatra::Base
         slim :index
     end
     
+    get '/signup' do 
+        slim :signup
+    end
+    
     get '/users/:user_id/wall?' do
         m_tag={}
-        if params.key?(:reply_id); @refrence_id = params[:reply_id] end
-        if params.key?(:tag_filter_id); tag_filter_id = params[:tag_filter_id] end
-        if params.key?(:message_filter_id); message_filter_id = params[:message_filter_id] end
+        # pp params
+        if params.key?(:reply_id) then @refrence_id = params[:reply_id] 
+        end
+        if params.key?(:tag_filter_id) then tag_filter_id = params[:tag_filter_id] 
+        end
+        if params.key?(:message_filter_id) then  message_filter_id = params[:message_filter_id] 
+        end
         if params.key?(:tag_filter_id)
             filter_id = params[:tag_filter_id]
+            type = "tag"
         elsif params.key?(:message_filter_id)
-            filter_id = params[:tag_filter_id]
+            filter_id = params[:message_filter_id]
+            type = "message"
         end
+        # pp filter_id
         if !filter_id.nil?
-            @messages = Messages.get_all_message_and_usn_filter(filter_id)
+            @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
         else
             @messages = Messages.get_all_message_and_usn()
         end
         tags = Tags.get_tags_name_and_message_id()
+        
+        @tags = Tags.get_all
+        # pp @tags
         @user = params[:user_id]
         
         tags.each do |tag|
@@ -65,6 +79,22 @@ class App < Sinatra::Base
         @messages.uniq!
         # pp @messages
         slim :wall
+    end
+    
+    
+    get '/users/:user_id/profile?' do
+        pp params
+        user = params['user_id'].to_i
+        @user = Users.get_by_id(user, "*").first
+        pp @user
+        slim :profile
+    end
+    
+    post '/signup/create/?' do
+        
+        pwd_hash = params[:password]
+        Users.add(params[:username], pwd_hash)
+        redirect '/'
     end
     
     post '/login/?' do 
@@ -84,8 +114,8 @@ class App < Sinatra::Base
     end
     
     post '/users/:user_id/wall/new' do
-        pp params
-        tag_arr = [params[:anc], params[:rln], params[:adp]]
+        # pp params
+        tag_arr = params['tag']
         # pp tag_arr
         Messages.create(params[:content], params[:user_id], tag_arr, params['refrence_id'])
         redirect "/users/#{params[:user_id]}/wall"

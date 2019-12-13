@@ -1,6 +1,8 @@
 header
     h1 PostIt
 
+a.h1 href="profile" profile
+
 form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="post"
     -if !@refrence_id.nil?
         span="Reply to message #{@refrence_id}"
@@ -11,9 +13,9 @@ form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="p
     input type="hidden" name="refrence_id" value="#{@refrence_id}"
     button type="submit" class="post-box" Post it!
     -if @user == @admin_id
-        input type="checkbox" name="adp" value="1" Admin post
-        input type="checkbox" name="anc" value="2" Announcement
-        input type="checkbox" name="rln" value="3" Release notes
+        -for tag in @tags
+            label #{tag['name']}
+            input type="checkbox" name="tag[]" value="#{tag['id']}"
 
 form action="/users/#{params[:user_id]}/wall/filter" method="post"
     span Filter:
