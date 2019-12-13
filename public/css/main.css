@@ -4,9 +4,11 @@ body{
 }
 
 div.message{
+    border: 1px black solid;
+    border-radius: 5px;
     margin-left: 5%;
     margin-top: 5%;
-    background-color: hotpink;
+    /* background-color: hotpink; */
     width: 300px;
     height: 250px;
     display: grid;
