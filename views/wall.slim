@@ -14,9 +14,8 @@ form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="p
     button type="submit" class="post-box" Post it!
     -if @user == @admin_id
         -for tag in @tags
-            label #{tag['name']}
-            input type="checkbox" name="tag[]" value="#{tag['id']}"
-
+            label for="#{tag['name']}" #{tag['name']}
+            input type="checkbox" name="tag[]" id="#{tag['name']}" value="#{tag['id']}"
 form action="/users/#{params[:user_id]}/wall/filter" method="post"
     span Filter:
     select name="filter" onchange="this.form.submit()"
@@ -24,6 +23,7 @@ form action="/users/#{params[:user_id]}/wall/filter" method="post"
         option value="1" Admin posts
         option value="2" Announcement
         option value="3" Release notes
+a.h1 href="wall" clear filter
 main
     -for message in @messages
         == slim :'messages/message', locals: {message: message, tags: @tags}

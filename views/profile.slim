@@ -4,9 +4,22 @@ header
 a href="/users/:user_id/wall" go back
 
 .settings
-    forms action="update"
-        span username:
-        input type='text' name='username' value="#{@user['usn']}"
-        span password:
-        input type='password' name='password' value=""
-        button type="submit" update
+
+    - if !@pwd_correct
+        p wrong password! try again
+    - if @update_pwd
+        p password updated!
+    - if !@stopper
+        form.pwd action="/users/#{params[:user_id]}/profile/update_pwd" method="post"
+            span old password
+            input type='password' name="old_pwd"
+            span confirm old password
+            input type="password" name="old_pwd_confirmed"
+            span new password
+            input type="password" name="new_pwd"
+            span confirm new password
+            input type="password" name="new_pwd_confirmed"
+            button type="submit" update password!
+        
+    - elsif @stopper 
+        p too many attempts!

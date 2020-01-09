@@ -17,10 +17,10 @@ class Users < Handler_db
         super
     end
     
-    def self.add(usn, pwd, privileges=0)
-        pwd_hash = BCrypt::Password.create(pwd)
+    def self.add(usn, pwd_hash, privileges=0)
         @db.execute('INSERT INTO users (usn, pwd, privileges) VALUES (?,?,?)', usn, pwd_hash, privileges)
     end
+
     
     def self.get_cells_by(cell ,field, value)
         @db.execute("SELECT #{cell} FROM users WHERE #{field} = #{value};")
@@ -42,6 +42,19 @@ class Users < Handler_db
         end
         get_cells_by(cell,'privileges',role)
         
+    end
+
+    def self.update_by_cell(cell, value, condition_field, condition_value)
+        @db.execute("UPDATE users SET #{cell}= '#{value}' WHERE #{condition_field} = #{condition_value};")
+    end
+
+    def self.update_by_id(id, cell, value)
+        self.update_by_cell(cell, value, "id", id)
+    end
+
+    def self.update_pwd_by_id(id, pwd_hash)
+        p pwd_hash
+        self.update_by_id(id, "pwd", pwd_hash)
     end
     
 end

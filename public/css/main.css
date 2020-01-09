@@ -77,3 +77,14 @@ form.adminbutton{
 form.reply{
 	grid-area: reply;
 }
+
+.settings{
+    display: flex;
+    flex-direction: column;
+}
+
+.settings * {
+
+    display: flex;
+    flex-direction: column;
+}

@@ -17,11 +17,20 @@ function randcolor()
 {
     messages = document.getElementsByClassName("message")
     for (i=0;i < messages.length; i++){
-        var randomcolor = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-        if (randomcolor.length < 7){
-            randomcolor += 0
+        val = Math.round(Math.random() * 4)
+        console.log(val)
+        if (val == 1) {
+            randomcolor = "#aed143"
+        } else if (val == 2) {
+            randomcolor = "#fbd249"
+        } else if (val == 3) {
+            randomcolor = "#f49f3f"
+        } else if (val == 4) {
+            randomcolor = "#d35595"
+        } else if (val == 0) {
+            randomcolor = "#51bcb3"
         }
-        console.log(randomcolor)
         messages[i].style.background = `${randomcolor}`;
     }
 }
+    

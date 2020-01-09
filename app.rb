@@ -1,5 +1,6 @@
 require_relative('handler_db.rb')
 require 'pp'
+require 'byebug'
 system('cls')
 class App < Sinatra::Base
     
@@ -83,31 +84,40 @@ class App < Sinatra::Base
     
     
     get '/users/:user_id/profile?' do
-        pp params
+        # pp params
         user = params['user_id'].to_i
         @user = Users.get_by_id(user, "*").first
-        pp @user
+        # pp @user
         slim :profile
     end
     
     post '/signup/create/?' do
-        
-        pwd_hash = params[:password]
+        pwd_hash = BCrypt::Password.create(params[:password])
+        byebug
         Users.add(params[:username], pwd_hash)
         redirect '/'
     end
     
     post '/login/?' do 
-        pwd_hash = Users.get_by_usn(params[:username], 'id, pwd').first
-        if pwd_hash.nil?
+        user_info = Users.get_by_usn(params[:username], 'id, pwd').first
+        if user_info.nil?
             session[:login] = false
             redirect '/'
         end
-        if BCrypt::Password.new(pwd_hash['pwd']) == params[:password]
-            session[:user_id] = pwd_hash['id']
+        # puts "here"
+        pwd_hash = BCrypt::Password.new(user_info['pwd'])
+        # p params[:password]
+        # byebug
+        if pwd_hash == params[:password]
+            # pp true
+            session[:user_id] = user_info['id']
             session[:login] = true
             redirect "/users/#{session[:user_id]}/wall"
         else
+            # pp params
+            # pp user_info
+            # pp pass_hash
+            # pp user_info['pwd']
             session[:login] = false
             redirect '/'
         end  
@@ -135,5 +145,31 @@ class App < Sinatra::Base
     post '/users/:user_id/wall/filter' do
         tag_filter_id = params[:filter]
         redirect "/users/#{params[:user_id]}/wall?tag_filter_id=#{tag_filter_id}"
+    end
+    
+    post '/users/:user_id/profile/update_pwd' do 
+        pp params
+        session[:counter] ||= 0
+        if session[:counter] < 3
+            pwd_hash = Users.get_by_id(params[:user_id], "pwd").first['pwd']
+            pp pwd_hash
+            pp params[:new_pwd]
+            pp params['new_pwd']
+            if params['old_pwd'] == params['old_pwd_confirmed'] && params['new_pwd'] == params['new_pwd_confirmed'] && BCrypt::Password.new(pwd_hash) == params['old_pwd']
+                pwd_hash = BCrypt::Password.create(params['new_pwd'])
+                Users.update_pwd_by_id(params[:user_id], pwd_hash)
+                @updated = true
+                redirect "/users/#{params[:user_id]}/profile"
+                
+            else
+                @pwd_correct = false
+                session[:counter] += 1
+                redirect "/users/#{params[:user_id]}/profile"
+            end
+        else
+            @stopper = true
+            redirect "/users/#{params[:user_id]}/profile"
+        end
+        
     end
 end
