@@ -11,8 +11,7 @@ class App < Sinatra::Base
         Messages.connect
         Taggings.connect
         Tags.connect
-        @admin_id = "1"
-        
+        @admin_id = "1" 
         super
     end
     
