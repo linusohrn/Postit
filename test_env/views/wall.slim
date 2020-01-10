@@ -1,0 +1,29 @@
+header
+    h1 PostIt
+
+a.h1 href="profile" profile
+
+form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="post"
+    -if !@refrence_id.nil?
+        span="Reply to message #{@refrence_id}"
+    -else
+        span New message:
+
+    textarea rows="10" cols="20" class="post-box" name="content"
+    input type="hidden" name="refrence_id" value="#{@refrence_id}"
+    button type="submit" class="post-box" Post it!
+    -if @user == @admin_id
+        -for tag in @tags
+            label for="#{tag['name']}" #{tag['name']}
+            input type="checkbox" name="tag[]" id="#{tag['name']}" value="#{tag['id']}"
+form action="/users/#{params[:user_id]}/wall/filter" method="post"
+    span Filter:
+    select name="filter" onchange="this.form.submit()"
+        option value="0" None
+        option value="1" Admin posts
+        option value="2" Announcement
+        option value="3" Release notes
+a.h1 href="wall" clear filter
+main
+    -for message in @messages
+        == slim :'messages/message', locals: {message: message, tags: @tags}

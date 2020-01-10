@@ -21,19 +21,19 @@ class Handler
     end
 
     def self.get(field:"*", cell:"*", where:"", join:"", order_by:"", limit:"")
-	    @db.execute("SELECT #{cell} FROM #{@table_name} #{where} #{join} #{order_by} #{limit}")
+        
     end
    
-    def self.insert(field:"*", value:"", where:"") 
-	@db.execute("INSERT INTO #{@table_name} (#{field}) VALUES (?);", value)
+    def self.insert
+
     end
 
-    def self.delete(field:"", where:"")
-	@db.execute("DELETE FROM #{@table_name} #{where}")
+    def self.delete
+
     end
 
-    def self.update(field:"", value:"", where:""
-		    @db.execute("UPDATE #{@table_name} SET #{field} #{value} #{where}")
+    def self.update
+
     end
 
 end

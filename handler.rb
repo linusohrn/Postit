@@ -20,22 +20,14 @@ class Handler
         get_all
     end
 
-    def self.get(field:"*", cell:"*", where:"", join:"", order_by:"", limit:"")
-	    @db.execute("SELECT #{cell} FROM #{@table_name} #{where} #{join} #{order_by} #{limit}")
-    end
-   
-    def self.insert(field:"*", value:"", where:"") 
-	@db.execute("INSERT INTO #{@table_name} (#{field}) VALUES (?);", value)
+    def self.get_all
+        @db.execute("SELECT * FROM #{@table_name}")
     end
 
-    def self.delete(field:"", where:"")
-	@db.execute("DELETE FROM #{@table_name} #{where}")
+    def self.get_cell_by(cell, field, value)
+        @db.execute('SELECT ? FROM ? WHERE ? = ?', cell, @table_name, field, value)
     end
-
-    def self.update(field:"", value:"", where:""
-		    @db.execute("UPDATE #{@table_name} SET #{field} #{value} #{where}")
-    end
-
+    
 end
 
 class Users < Handler
