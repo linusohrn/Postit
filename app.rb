@@ -12,6 +12,7 @@ class App < Sinatra::Base
         Taggings.connect
         Tags.connect
         @admin_id = "1"
+        
         super
     end
     
@@ -30,6 +31,7 @@ class App < Sinatra::Base
     end
     
     get '/' do
+        @failed ||= true
         @failed = session[:login]
         slim :index
     end
@@ -47,6 +49,7 @@ class App < Sinatra::Base
         end
         if params.key?(:message_filter_id) then  message_filter_id = params[:message_filter_id] 
         end
+
         if params.key?(:tag_filter_id)
             filter_id = params[:tag_filter_id]
             type = "tag"
@@ -55,6 +58,7 @@ class App < Sinatra::Base
             type = "message"
         end
         # pp filter_id
+
         if !filter_id.nil?
             @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
         else
@@ -93,7 +97,7 @@ class App < Sinatra::Base
     
     post '/signup/create/?' do
         pwd_hash = BCrypt::Password.create(params[:password])
-        byebug
+        # byebug
         Users.add(params[:username], pwd_hash)
         redirect '/'
     end
@@ -148,17 +152,20 @@ class App < Sinatra::Base
     end
     
     post '/users/:user_id/profile/update_pwd' do 
-        pp params
+        # pp params
         session[:counter] ||= 0
         if session[:counter] < 3
             pwd_hash = Users.get_by_id(params[:user_id], "pwd").first['pwd']
-            pp pwd_hash
-            pp params[:new_pwd]
-            pp params['new_pwd']
+            # pp pwd_hash
+            # pp params[:new_pwd]
+            # pp params['new_pwd']
             if params['old_pwd'] == params['old_pwd_confirmed'] && params['new_pwd'] == params['new_pwd_confirmed'] && BCrypt::Password.new(pwd_hash) == params['old_pwd']
                 pwd_hash = BCrypt::Password.create(params['new_pwd'])
                 Users.update_pwd_by_id(params[:user_id], pwd_hash)
+                session[:counter] = 0
+                @pwd_correct = true
                 @updated = true
+                @stopper = false
                 redirect "/users/#{params[:user_id]}/profile"
                 
             else
