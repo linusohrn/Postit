@@ -60,8 +60,9 @@ class App < Sinatra::Base
 
         if !filter_id.nil?
             @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
+            @messages = Messages.get(field:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
         else
-            @messages = Messages.get_all_message_and_usn()
+            @messages = Messages.get(join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
         end
         tags = Tags.get_tags_name_and_message_id()
         
