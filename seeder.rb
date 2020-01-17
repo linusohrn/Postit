@@ -24,8 +24,8 @@ class Seeder
         @db.execute('CREATE TABLE "messages" (
             "id"	INTEGER,
             "content"	TEXT NOT NULL,
-            "refrence_id"	INTEGER,
             "user_id"	INTEGER NOT NULL,
+            "refrence_id"	INTEGER,
             PRIMARY KEY("id")
             )')
             

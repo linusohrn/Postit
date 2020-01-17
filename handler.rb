@@ -17,7 +17,27 @@ class Handler
         @db.results_as_hash = true
         pp @table_name
         pp @fields
-        get_all
+    end
+
+    def self.create
+        note = yield
+
+        cells = ''
+        note.keys.each_with_index {|key,index| index>0 ? cells +=  ', ' + key.to_s : cells += key.to_s}
+
+        values = ''
+        note.keys.each_with_index do |key, index|
+            if !note[key].nil?
+                index>0 ? values +=  ', ' + note[key].to_s : values += note[key].to_s
+            else
+                values += ", nil"
+            end
+        end
+        # note.keys.each_with_index {|key,index| index>0 ? values += ', ' + note[key].to_s : values += note[key].to_s}
+        pp "cells: " + cells
+        pp "values: " + values
+        @db.execute("INSERT INTO #{@table_name} (#{cells}) VALUES (#{values});")
+
     end
 
     def self.get_all
@@ -81,5 +101,6 @@ class Tags < Handler
     end
     
 end
-
-Tags.connect()
+params = {content: "testing", user_id: 1, refrence_id: nil}
+Messages.connect()
+Messages.create {params}

@@ -92,7 +92,7 @@ class Handler
     def update(field:"", value:"", where:"")
 		@db.execute("UPDATE #{@table_name} SET #{field} #{value} #{where}")
     end
-
+    
 end
 
 class Users < Handler
