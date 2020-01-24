@@ -1,0 +1,16 @@
+.message id="message_id=#{message}"
+    a.ids.m.essential href="?message_filter_id=#{message['id']}"= "#{message['id']}"
+    a.ids.m.essential href="?message_filter_id=#{message['refrence_id']}"= "#{message['refrence_id']}"
+    h4.usn.m.essential= "#{message['usn']}"
+    p.cnt.m.essential= "#{message['content']}"
+    .tags.m
+        -if !message['tags'].nil? 
+            -message['tags'].each do |tag|
+                p.tag.m= "#{tag}"
+    form.reply.m action="/users/#{params[:user_id]}/wall/#{message['id']}/reply" class="replybut" method="post"
+        button type="submit" Reply
+    -if @user == @admin_id
+        form.adminbutton.m action="/users/#{params[:user_id]}/wall/#{message['id']}/delete" class="deletebut" method="post"
+            button type="submit" delete!
+    input type="hidden" id="#{message['id']}" value="localhost:9292/users/1/wall#message_id=#{message['id']}"
+    button onclick="CopyToClipboard(#{message['id']})" share! 

@@ -2,14 +2,14 @@ require 'sqlite3'
 require 'bcrypt'
 
 class Handler
-    
+
     def self.set_table_name(name)
         @table_name = name
     end
     
     def self.set_fields(name)
-        @fields ||= []
-        @fields << name
+        @fields ||= {}
+        @fields[name] = nil
     end
     
     def self.table_name
@@ -20,11 +20,14 @@ class Handler
         @fields
     end
     
-    def initialize
-        @db ||= SQLite3::Database.new('db/db.db')
-        @db.results_as_hash = true
+    def initialize(**args)
+        @@db ||= SQLite3::Database.new('db/db.db')
+        @@db.results_as_hash = true
         @table_name = self.class.table_name
         @fields = self.class.fields
+        args.each do |key, value|
+            @fields[key] = value
+        end
     end
     
     #   TAKES NESTED ARRAY AND RETURNS AS STRING FIT FOR SQL REQUEST
@@ -33,7 +36,7 @@ class Handler
     #
     #   where_handler(where:{id:1, name:"hej"})
     #   ==> "WHERE id = 1 AND name = hej" 
-    def where_handler(where)
+    def self.where_handler(where)
         # pp where
         # p !where.empty?
         if !where.empty?
@@ -58,7 +61,7 @@ class Handler
         end
     end
     
-    def join_handler(join)
+    def self.join_handler(join)
         # pp join
         # pp if !join.empty?
         if !join == ""
@@ -76,19 +79,19 @@ class Handler
         end
     end
     
-    def order_handler(order)
+    def self.order_handler(order)
         if !order == ""
             order_str = " ORDER BY #{order[:table]}.#{order[:field]} #{order[:direction].upcase}"
         end
     end
     
-    def limit_handler(limit)
+    def self.limit_handler(limit)
         if !limit.empty?
             limit_str = " LIMIT #{limit}"
         end
     end
     
-    def insert_handler(fields)
+    def self.insert_handler(fields)
         # pp fields
         output_keys=''
         i=0
@@ -105,7 +108,7 @@ class Handler
         return output_keys
     end
     
-    def values_handler(values)
+    def self.values_handler(values)
         output_values=''
         i=0
         values.each do |_, value|
@@ -118,8 +121,8 @@ class Handler
         end
         return output_values
     end
-
-    def update_handler(input)
+    
+    def self.update_handler(input)
         output = ""
         i=0
         input.each do |key, value|
@@ -131,33 +134,45 @@ class Handler
         end
         return output
     end
-    
-    #   WORKS!
-    #
-    def fetch(fields:"*", where:, join:"", order:"", limit:"")
-        # pp where*
-        pp "SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name}#{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};"
-        # pp @db.execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};")
+
+    def self.construct_object(result_hash)
+        pp result_hash
+        new(result_hash)
     end
     
     #   WORKS!
     #
-    def insert(fields:"") 
-        @db.execute("INSERT INTO #{@table_name} (#{insert_handler(fields)}) VALUES (#{values_handler(fields)});")
+    def self.fetch(fields:"*", where:"", join:"", order:"", limit:"")
+        new
+        @@db.execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+            construct_object(result_hash)
+        end
+
+        # @db.execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name}#{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+        #     construct_object(result_hash)
+        # end
     end
     
     #   WORKS!
     #
-    def delete(where:"")
+    #
+    #   Check if id exists before saving
+    #   if exists then UPDATE
+    #   otherwise INSERT
+    def save 
+        @db.execute("INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});")
+    end
+    
+    #   WORKS!
+    #
+    def delete
+        @db.execute("DELETE FROM #{@table_name} WHERE id = #{@fields[:id]}")
+    end
+    
+    def self.delete(where:)
         @db.execute("DELETE FROM #{@table_name} #{where_handler(where)}")
     end
     
-    #   WORKS!
-    #
-    def update(fields:"", where:"")
-        # puts "UPDATE #{@table_name} SET #{update_handler(fields)}#{where_handler(where)};"
-		@db.execute("UPDATE #{@table_name} SET #{update_handler(fields)}#{where_handler(where)};")
-    end
     
 end
 
@@ -168,7 +183,7 @@ class Users < Handler
     set_fields "usn"
     set_fields "pwd"
     set_fields "privileges"
-    
+
     def initialize
         super
     end
@@ -213,11 +228,10 @@ class Tags < Handler
     
 end
 
-u = Users.new
-
-# u.fetch(fields:["usn", "content","refrence_id", "name"], join:{messages:{condition:{user_id:"messages", id:"users"}}, taggings:{type:"left", condition:{tag_id:"taggings", refrence_id:"messages"}}, tags:{type:"left", condition:{id:"tags", tag_id:"taggings"}}}, order:{field:"id", table:"messages", direction:"asc"})
+# Users.fetch(fields:["usn", "content","refrence_id", "name"], join:{messages:{condition:{user_id:"messages", id:"users"}}, taggings:{type:"left", condition:{tag_id:"taggings", refrence_id:"messages"}}, tags:{type:"left", condition:{id:"tags", tag_id:"taggings"}}}, order:{field:"id", table:"messages", direction:"asc"})
 # u.fetch(fields:["usn", "content", "refrence_id", "name"], join:{users:{type:"left", condition:{user_id:"messages", id:"users"}}, taggings:{type:"left", condition:{message_id:"taggings", id:"messages"}}, tags:{type:"left", condition:{id:"tags", tag_id:"taggings"}}})
 # u.insert(fields:{usn:"test", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", privileges:0})
 # u.delete(where:{id:5})
 # u.fetch(where:{id:1})
 # u.update(fields:{usn:"linus", privileges:1}, where:{id:5})
+Users.fetch(fields:["usn", "pwd"])
