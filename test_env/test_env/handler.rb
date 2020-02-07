@@ -18,6 +18,11 @@ class Handler
         @fields ||= {}
         @fields[name] = nil
     end
+
+    def self.set_unique(name)
+        @unique ||= []
+        @unique << name
+    end
     
     def self.table_name
         @table_name
@@ -25,6 +30,10 @@ class Handler
     
     def self.fields
         @fields
+    end
+
+    def self.unique
+        @unique
     end
     
     def initialize(**args)
@@ -36,7 +45,13 @@ class Handler
             # p value
             @fields[key.to_s] = value
         end
+        @unique = self.class.unique
         # pp @fields
+        # pp exist_in_db?
+        if exist_in_db?.nil?
+            # pp "ran"
+            self.save
+        end
     end
     
     
@@ -47,11 +62,10 @@ class Handler
     #
     #   where_handler(where:{id:1, name:"hej"})
     #   ==> "WHERE id = 1 AND name = hej" 
-    def where_handler(where)
-        # pp where
+    def where_handler(where, type=nil)
+        pp where
         # p !where.empty?
         if !where.empty?
-            # p "ran"
             if !where[:table].nil?
                 table_prefix = where[:table].to_s + "."
             else
@@ -59,14 +73,25 @@ class Handler
             end
             where.delete(:table)
             condition = " WHERE "
-            ands = where.length - 1
+            counter = where.length - 1
             where.each do |key, value|
-                condition += table_prefix + key.to_s + " = " + "'"+value.to_s+"'"
-                if ands > 0
-                    condition += " AND "
-                    ands -= 1
+                # pp value.class
+                condition += table_prefix + key.to_s + " = "
+                if value.class == String
+                    condition += "'"+value.to_s+"'"
+                else
+                    condition += value.to_s
+                end
+                if !type.nil?
+                    if counter > 0
+                        condition += " #{type} "
+                        counter -= 1
+                    end
+                else
+                    break
                 end
             end
+            
             # pp condition
             return condition
         end
@@ -167,7 +192,7 @@ class Handler
     #   WORKS!
     #
     #
-    def self.fetch(fields:"*", where:"", join:"", order:"", limit:"")
+    def self.fetch(fields:"*", where:, join:, order:, limit:)
         connect()
         @obj_arr = Array.new
         # p @obj_arr
@@ -197,31 +222,58 @@ class Handler
         if !@fields.nil? && !@fields.empty?
             # p "SELECT * FROM #{@table_name}#{where_handler(@fields)};"
             # pp !execute("SELECT * FROM #{@table_name}#{where_handler(@fields)};").first.nil?
-            @fields.each do |key, value|
-                pp key
-                pp value
-            end
-            existing = execute("SELECT * FROM #{@table_name}#{where_handler(@fields)};").first
             # pp existing
-            if !exist_in_db?(@fields)
-                puts "UPDATE #{@table_name} SET #{update_handler(@fields)} WHERE id = #{existing['id']};"
-                # execute("UPDATE #{@table_name} SET #{update_handler(@fields)} WHERE id = #{existing['id']};")
+            existing = exist_in_db?
+            # pp existing
+            if !existing.nil?
+                # puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
+                execute("UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};")
             else
-                puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
-                # execute("INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});")
+                # puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
+                execute("INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});")
             end
         else
             puts "please give your #{@table_name} some values"
         end
     end
-
-    def exist_in_db?(fields)
+    
+    def exist_in_db?
+        # pp "ran"
+        @unique.each do |cell|
+            # pp key
+            # pp cell
+            # pp value
+            duplicate = execute("SELECT id FROM #{@table_name} WHERE #{cell.to_s} = '#{@fields[cell]}';")
+            # pp duplicate
+            # pp duplicate.first
+            if !duplicate.empty?
+                # pp "ran"
+                return duplicate.first
+                break
+            else
+                return nil
+                break
+            end
+        end
+    end
     
     def execute(str)
-        db ||= SQLite3::Database.new('db/db.db')
-        db.results_as_hash = true
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
         # p str
-        db.execute(str)
+        @db.execute(str)
+    end
+    
+    def transaction
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
+        @db.transaction
+    end
+    
+    def commit
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
+        @db.commit
     end
     
     
@@ -236,11 +288,11 @@ class Handler
     end
     
     def self.transaction
-        transaction
+        transaction()
     end
     
     def self.commit
-        commit
+        commit()
     end
     
     def data?
@@ -256,6 +308,8 @@ class Users < Handler
     set_fields "usn"
     set_fields "pwd"
     set_fields "privileges"
+    set_unique "id"
+    set_unique "usn"
     
     def initialize(**args)
         super(args)
@@ -305,8 +359,8 @@ end
 
 
 # t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
-t = Users.new(usn:"wadda", privileges:1)
-t.save
+t = Users.new(usn:"whad", privileges:0, pwd:"fuckthishist")
+# t.save
 # p Users.new('id':1)
 # p Users.new("id":1, "usn":"admin", "pwd":"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", "privileges":1)
 # p z.data?
