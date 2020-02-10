@@ -18,7 +18,7 @@ class Handler
         @fields ||= {}
         @fields[name] = nil
     end
-
+    
     def self.set_unique(name)
         @unique ||= []
         @unique << name
@@ -28,10 +28,10 @@ class Handler
         @table_name
     end
     
-    def self.fields
+    def fields
         @fields
     end
-
+    
     def self.unique
         @unique
     end
@@ -63,7 +63,7 @@ class Handler
     #   where_handler(where:{id:1, name:"hej"})
     #   ==> "WHERE id = 1 AND name = hej" 
     def where_handler(where, type=nil)
-        pp where
+        # pp where
         # p !where.empty?
         if !where.empty?
             if !where[:table].nil?
@@ -211,6 +211,18 @@ class Handler
         # end
     end
     
+    def update(**args)
+        args.each do |key, value|
+            if !@unique.include? key
+                @fields[key.to_s] = value
+            end
+        end
+    end
+
+    def self.update(**args)
+        update(args)
+    end
+    
     #   WORKS!
     #
     #
@@ -226,10 +238,10 @@ class Handler
             existing = exist_in_db?
             # pp existing
             if !existing.nil?
-                # puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
+                puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
                 execute("UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};")
             else
-                # puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
+                puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
                 execute("INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});")
             end
         else
@@ -239,19 +251,17 @@ class Handler
     
     def exist_in_db?
         # pp "ran"
-        @unique.each do |cell|
-            # pp key
-            # pp cell
-            # pp value
-            duplicate = execute("SELECT id FROM #{@table_name} WHERE #{cell.to_s} = '#{@fields[cell]}';")
+        # pp @unique
+        @unique.each do |uniq|
+            # pp uniq
+            # pp @fields[uniq]
+            
+            duplicate = execute("SELECT id FROM #{@table_name} WHERE #{uniq.to_s} = '#{@fields[uniq]}';")
             # pp duplicate
             # pp duplicate.first
             if !duplicate.empty?
                 # pp "ran"
                 return duplicate.first
-                break
-            else
-                return nil
                 break
             end
         end
@@ -268,11 +278,9 @@ class Handler
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
         @db.transaction
-    end
-    
-    def commit
-        @db ||= SQLite3::Database.new('db/db.db')
-        @db.results_as_hash = true
+        # pp self
+        update(pwd:"newshit", privileges:1)
+        yield
         @db.commit
     end
     
@@ -288,12 +296,9 @@ class Handler
     end
     
     def self.transaction
-        transaction()
+        transaction(yield)
     end
-    
-    def self.commit
-        commit()
-    end
+
     
     def data?
         @fields
@@ -355,12 +360,20 @@ class Tags < Handler
     
 end
 
+#
+#   WORK ON TRANSACTIONS WITH BLOCKS TO RUN OTHER FUNCTIONS
+#
+#
+#
 
 
 
 # t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
-t = Users.new(usn:"whad", privileges:0, pwd:"fuckthishist")
-# t.save
+t = Users.new(usn:"bit", privileges:0, pwd:"fuckthishist")
+# t.pwd("newshit")
+t.transaction{}
+# t.update(pwd:"newshit", privileges:1)
+# pp t.fields
 # p Users.new('id':1)
 # p Users.new("id":1, "usn":"admin", "pwd":"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", "privileges":1)
 # p z.data?
