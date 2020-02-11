@@ -212,6 +212,7 @@ class Handler
     end
     
     def update(**args)
+        pp "ran"
         args.each do |key, value|
             if !@unique.include? key
                 @fields[key.to_s] = value
@@ -278,9 +279,8 @@ class Handler
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
         @db.transaction
-        # pp self
-        update(pwd:"newshit", privileges:1)
-        yield
+        yield_self
+        # yield(self)
         @db.commit
     end
     
@@ -296,7 +296,13 @@ class Handler
     end
     
     def self.transaction
-        transaction(yield)
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
+        @db.transaction
+        pp self
+        # self.update(pwd:"newshit", privileges:1)
+        blk.call
+        @db.commit
     end
 
     
@@ -369,9 +375,11 @@ end
 
 
 # t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
-t = Users.new(usn:"bit", privileges:0, pwd:"fuckthishist")
+t = Users.new(usn:"bit", privileges:0, pwd:"thishist")
 # t.pwd("newshit")
-t.transaction{}
+
+t.transaction{update(pwd:"newshit", privileges:1)}
+# pp t
 # t.update(pwd:"newshit", privileges:1)
 # pp t.fields
 # p Users.new('id':1)
