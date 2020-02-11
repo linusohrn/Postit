@@ -212,14 +212,13 @@ class Handler
     end
     
     def update(**args)
-        pp "ran"
         args.each do |key, value|
             if !@unique.include? key
                 @fields[key.to_s] = value
             end
         end
     end
-
+    
     def self.update(**args)
         update(args)
     end
@@ -239,14 +238,14 @@ class Handler
             existing = exist_in_db?
             # pp existing
             if !existing.nil?
-                puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
+                # puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
                 execute("UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};")
             else
-                puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
+                # puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
                 execute("INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});")
             end
         else
-            puts "please give your #{@table_name} some values"
+            raise "please give your #{@table_name} some values"
         end
     end
     
@@ -279,9 +278,28 @@ class Handler
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
         @db.transaction
-        yield_self
+        # byebug
+        if block_given?
+            yield
+            @db.commit
+        end
+        # @db.commit
         # yield(self)
+    end
+
+    def commit
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
         @db.commit
+
+    end
+    
+    def self.transaction
+        transaction{yield}
+    end
+    
+    def self.commit
+        commit
     end
     
     
@@ -304,7 +322,7 @@ class Handler
         blk.call
         @db.commit
     end
-
+    
     
     def data?
         @fields
@@ -367,7 +385,7 @@ class Tags < Handler
 end
 
 #
-#   WORK ON TRANSACTIONS WITH BLOCKS TO RUN OTHER FUNCTIONS
+#   WORK ON TRANSACTIONS WITH BLOCKS TO RUN OTHER MULTIPLE OTHER FUNCTIONS
 #
 #
 #
@@ -377,8 +395,8 @@ end
 # t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
 t = Users.new(usn:"bit", privileges:0, pwd:"thishist")
 # t.pwd("newshit")
-
-t.transaction{update(pwd:"newshit", privileges:1)}
+# t.save
+t.transaction{t.update(pwd:"newshit", privileges:), t.save}
 # pp t
 # t.update(pwd:"newshit", privileges:1)
 # pp t.fields
