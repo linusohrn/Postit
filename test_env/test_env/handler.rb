@@ -1,6 +1,8 @@
+require_relative 'modules/StringManipulation.rb'
 require 'sqlite3'
 require 'bcrypt'
 require 'byebug'
+include StringManipulation
 
 class Hash
     def keys_to_symbol
@@ -9,7 +11,7 @@ class Hash
 end
 
 class Handler
-    
+    #
     def self.set_table_name(name)
         @table_name = name
     end
@@ -39,13 +41,11 @@ class Handler
     def initialize(**args)
         @table_name = self.class.table_name
         @fields ||= {}
+        @unique = self.class.unique
+        # pp @unique
         args.each do |key, value|
-            # p "#########################"
-            # p key.to_s
-            # p value
             @fields[key.to_s] = value
         end
-        @unique = self.class.unique
         # pp @fields
         # pp exist_in_db?
         if exist_in_db?.nil?
@@ -54,146 +54,21 @@ class Handler
         end
     end
     
-    
-    
-    #   TAKES NESTED ARRAY AND RETURNS AS STRING FIT FOR SQL REQUEST
-    # 
-    #   where - Nested array with the desired conditions for SQL request. The table which the condition will be applied on can also be specified.
-    #
-    #   where_handler(where:{id:1, name:"hej"})
-    #   ==> "WHERE id = 1 AND name = hej" 
-    def where_handler(where, type=nil)
-        # pp where
-        # p !where.empty?
-        if !where.empty?
-            if !where[:table].nil?
-                table_prefix = where[:table].to_s + "."
-            else
-                table_prefix =""
-            end
-            where.delete(:table)
-            condition = " WHERE "
-            counter = where.length - 1
-            where.each do |key, value|
-                # pp value.class
-                condition += table_prefix + key.to_s + " = "
-                if value.class == String
-                    condition += "'"+value.to_s+"'"
-                else
-                    condition += value.to_s
-                end
-                if !type.nil?
-                    if counter > 0
-                        condition += " #{type} "
-                        counter -= 1
-                    end
-                else
-                    break
-                end
-            end
-            
-            # pp condition
-            return condition
-        end
-    end
-    
-    def join_handler(join)
-        # pp join
-        # pp if !join.empty?
-        if !join == ""
-            joiner = ""
-            join.each do |key, value|
-                # pp key
-                # pp value
-                if !value[:type].nil?
-                    type = value[:type].upcase+" "
-                end
-                joiner += " #{type}JOIN #{key.to_s} ON #{value[:condition].values.first}.#{value[:condition].keys.first} = #{value[:condition].values.last}.#{value[:condition].keys.last}"
-            end
-            
-            return joiner
-        end
-    end
-    
-    def order_handler(order)
-        if !order == ""
-            order_str = " ORDER BY #{order[:table]}.#{order[:field]} #{order[:direction].upcase}"
-        end
-    end
-    
-    def limit_handler(limit)
-        if !limit.empty?
-            limit_str = " LIMIT #{limit}"
-        end
-    end
-    
-    def insert_handler(fields)
-        # pp fields
-        output_keys=''
-        i=0
-        fields.each do |key, value|
-            if !value.nil?
-                # pp key.to_s
-                if i > 0
-                    output_keys += ', '+'"'+ key.to_s+'"'
-                else
-                    output_keys += '"'+key.to_s+'"'
-                end
-                i +=1
-            end
-        end
-        
-        return output_keys
-    end
-    
-    def values_handler(values)
-        output_values=''
-        i=0
-        values.each do |_, value|
-            if !value.nil?
-                if i > 0
-                    output_values += ', '+'"'+value.to_s+'"'
-                else
-                    output_values += '"'+value.to_s+'"'
-                end
-                i +=1
-            end
-        end
-        return output_values
-    end
-    
-    def update_handler(input)
-        output = ""
-        i=0
-        # pp input
-        input.each do |key, value|
-            # pp value
-            if !value.nil?
-                if i > 0
-                    output += ", "
-                end
-                # pp key
-                if key.to_s != "id"
-                    output += key.to_s + " = " + '"' + value.to_s + '"'
-                    i+=1
-                end
-            end
-        end
-        return output
-    end
-    
-    def construct_object(result_hash)
+    def self.construct_object(result_hash)
         # pp result_hash
-        result_hash = result_hash.to_h.keys_to_symbol
-        # pp new(result_hash)
-        return self.new(result_hash)
+        if !result_hash.nil? && !result_hash.empty?
+            result_hash = result_hash.to_h.keys_to_symbol
+            # pp new(result_hash)
+            return self.new(result_hash)
+        end
     end
     
     #   WORKS!
     #
     #
-    def self.fetch(fields:"*", where:, join:, order:, limit:)
-        connect()
+    def self.fetch(fields:"*", where: nil, join: nil, order: nil, limit: nil)
+        # connect()
+        # pp self.methods
         @obj_arr = Array.new
         # p @obj_arr
         execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
@@ -236,9 +111,10 @@ class Handler
             # pp !execute("SELECT * FROM #{@table_name}#{where_handler(@fields)};").first.nil?
             # pp existing
             existing = exist_in_db?
-            # pp existing
+            pp existing
             if !existing.nil?
-                # puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
+            
+                puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
                 execute("UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};")
             else
                 # puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
@@ -256,7 +132,7 @@ class Handler
             # pp uniq
             # pp @fields[uniq]
             
-            duplicate = execute("SELECT id FROM #{@table_name} WHERE #{uniq.to_s} = '#{@fields[uniq]}';")
+            duplicate = execute("SELECT * FROM #{@table_name} WHERE #{uniq.to_s} = '#{@fields[uniq]}';")
             # pp duplicate
             # pp duplicate.first
             if !duplicate.empty?
@@ -265,6 +141,13 @@ class Handler
                 break
             end
         end
+    end
+    
+    def self.execute(str)
+        @db ||= SQLite3::Database.new('db/db.db')
+        @db.results_as_hash = true
+        # p str
+        @db.execute(str)
     end
     
     def execute(str)
@@ -286,12 +169,12 @@ class Handler
         # @db.commit
         # yield(self)
     end
-
+    
     def commit
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
         @db.commit
-
+        
     end
     
     def self.transaction
@@ -313,14 +196,21 @@ class Handler
         execute("DELETE FROM #{@table_name} #{where_handler(where)}")
     end
     
+    # Starts a database transaction and if a block is provided also commits.
+    #
+    #
+    #
+    #
+    #
     def self.transaction
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
         @db.transaction
-        pp self
-        # self.update(pwd:"newshit", privileges:1)
-        blk.call
-        @db.commit
+        # byebug
+        if block_given?
+            yield
+            @db.commit
+        end
     end
     
     
@@ -347,12 +237,13 @@ class Users < Handler
 end
 
 class Messages < Handler
-    
+    include StringManipulation
     set_table_name "messages"
     set_fields "id"
     set_fields "content"
     set_fields "refrence_id"
     set_fields "user_id"
+    set_unique "id"
     
     def initialize(**args)
         super(args)
@@ -377,6 +268,8 @@ class Tags < Handler
     set_table_name "tags"
     set_fields "id"
     set_fields "name"
+    set_unique "id"
+    set_unique "name"
     
     def initliaze(**args)
         super(args)
@@ -392,11 +285,25 @@ end
 
 
 
+Messages.fetch(
+        fields:['messages.id', 'messages.content', 'messages.refrence_id', 'users.usn'], 
+        join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}}
+        )
+t= Users.new(usn:"jakeyboy", pwd:"hek", id:1)
+# p t.fields
+t.save
+# pp Messages.fetch(
+#     fields:['messages.id', 'messages.content', 'messages.refrence_id', 'users.usn'], 
+#     join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}}
+#     )
 # t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
-t = Users.new(usn:"bit", privileges:0, pwd:"thishist")
+# t = Users.new(usn:"bit", privileges:0, pwd:"thishist")
 # t.pwd("newshit")
 # t.save
-t.transaction{t.update(pwd:"newshit", privileges:), t.save}
+# t.transaction { 
+#     t.update(pwd:"newshit", privileges:1) 
+#     t.save
+# }
 # pp t
 # t.update(pwd:"newshit", privileges:1)
 # pp t.fields
