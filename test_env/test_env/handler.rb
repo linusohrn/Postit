@@ -11,19 +11,24 @@ class Hash
 end
 
 class Handler
-    #
+
     def self.set_table_name(name)
         @table_name = name
     end
     
     def self.set_fields(name)
-        @fields ||= {}
-        @fields[name] = nil
+        @fields ||= []
+        @fields << name
+        self.instance_variable_set("@#{name}", nil)
     end
     
     def self.set_unique(name)
         @unique ||= []
         @unique << name
+    end
+    
+    def self.set_has(name)
+        
     end
     
     def self.table_name
@@ -34,22 +39,24 @@ class Handler
         @fields
     end
     
+    # def self.fields
+    #     @fields
+    # end
+    
     def self.unique
         @unique
     end
     
-    def initialize(**args)
+    def initialize(construction, **args)
         @table_name = self.class.table_name
-        @fields ||= {}
+        # @fields ||= {}
         @unique = self.class.unique
-        # pp @unique
         args.each do |key, value|
-            @fields[key.to_s] = value
+            # @fields[key.to_s] = value
+            self.instance_variable_set("@#{key}", value)
         end
-        # pp @fields
-        # pp exist_in_db?
-        if exist_in_db?.nil?
-            # pp "ran"
+
+        if !construction
             self.save
         end
     end
@@ -59,9 +66,10 @@ class Handler
         if !result_hash.nil? && !result_hash.empty?
             result_hash = result_hash.to_h.keys_to_symbol
             # pp new(result_hash)
-            return self.new(result_hash)
+            return self.new(true,result_hash)
         end
     end
+
     
     #   WORKS!
     #
@@ -71,9 +79,10 @@ class Handler
         # pp self.methods
         @obj_arr = Array.new
         # p @obj_arr
-        execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+        execute("SELECT #{fields_handler(fields)} FROM #{@table_name} AS #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
             
             #   WHAT THE ACTUAL FUCK IS HAPPENING 
+            
             result = construct_object(result_hash)
             @obj_arr << result
             
@@ -111,10 +120,10 @@ class Handler
             # pp !execute("SELECT * FROM #{@table_name}#{where_handler(@fields)};").first.nil?
             # pp existing
             existing = exist_in_db?
-            pp existing
+            # pp existing
             if !existing.nil?
-            
-                puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
+                
+                # puts "UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};"
                 execute("UPDATE #{@table_name} SET #{update_handler(@fields)}#{where_handler(existing)};")
             else
                 # puts "INSERT INTO #{@table_name} (#{insert_handler(@fields)}) VALUES (#{values_handler(@fields)});"
@@ -128,17 +137,19 @@ class Handler
     def exist_in_db?
         # pp "ran"
         # pp @unique
-        @unique.each do |uniq|
-            # pp uniq
-            # pp @fields[uniq]
-            
-            duplicate = execute("SELECT * FROM #{@table_name} WHERE #{uniq.to_s} = '#{@fields[uniq]}';")
-            # pp duplicate
-            # pp duplicate.first
-            if !duplicate.empty?
-                # pp "ran"
-                return duplicate.first
-                break
+        if !@unique.nil? && !@unique.empty?
+            @unique.each do |uniq|
+                # pp uniq
+                # pp @fields[uniq]
+                
+                duplicate = execute("SELECT * FROM #{@table_name} WHERE #{uniq.to_s} = '#{@fields[uniq]}';")
+                # pp duplicate
+                # pp duplicate.first
+                if !duplicate.empty?
+                    # pp "ran"
+                    return duplicate.first
+                    break
+                end
             end
         end
     end
@@ -146,14 +157,14 @@ class Handler
     def self.execute(str)
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
-        # p str
+        pp str
         @db.execute(str)
     end
     
     def execute(str)
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
-        # p str
+        pp str
         @db.execute(str)
     end
     
@@ -229,9 +240,10 @@ class Users < Handler
     set_fields "privileges"
     set_unique "id"
     set_unique "usn"
+    # set_has Messages
     
-    def initialize(**args)
-        super(args)
+    def initialize(construction=false, **args)
+        super(construction, args)
     end
     
 end
@@ -244,9 +256,10 @@ class Messages < Handler
     set_fields "refrence_id"
     set_fields "user_id"
     set_unique "id"
+    # set_has Taggings
     
-    def initialize(**args)
-        super(args)
+    def initialize(construction=false,**args)
+        super(construction, args)
     end
     
 end
@@ -256,9 +269,10 @@ class Taggings < Handler
     set_table_name "taggings"
     set_fields "message_id"
     set_fields "tag_id"
+    # set_has Tags
     
-    def initialize(**args)
-        super(args)
+    def initialize(construction=false,**args)
+        super(construction, args)
     end
     
 end
@@ -271,50 +285,8 @@ class Tags < Handler
     set_unique "id"
     set_unique "name"
     
-    def initliaze(**args)
-        super(args)
+    def initliaze(construction=false,**args)
+        super(construction, args)
     end
     
 end
-
-#
-#   WORK ON TRANSACTIONS WITH BLOCKS TO RUN OTHER MULTIPLE OTHER FUNCTIONS
-#
-#
-#
-
-
-
-Messages.fetch(
-        fields:['messages.id', 'messages.content', 'messages.refrence_id', 'users.usn'], 
-        join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}}
-        )
-t= Users.new(usn:"jakeyboy", pwd:"hek", id:1)
-# p t.fields
-t.save
-# pp Messages.fetch(
-#     fields:['messages.id', 'messages.content', 'messages.refrence_id', 'users.usn'], 
-#     join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}}
-#     )
-# t = Users.new(usn:"trash", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O")
-# t = Users.new(usn:"bit", privileges:0, pwd:"thishist")
-# t.pwd("newshit")
-# t.save
-# t.transaction { 
-#     t.update(pwd:"newshit", privileges:1) 
-#     t.save
-# }
-# pp t
-# t.update(pwd:"newshit", privileges:1)
-# pp t.fields
-# p Users.new('id':1)
-# p Users.new("id":1, "usn":"admin", "pwd":"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", "privileges":1)
-# p z.data?
-# Users.save
-# Users.fetch(fields:["usn", "content","refrence_id", "name"], join:{messages:{condition:{user_id:"messages", id:"users"}}, taggings:{type:"left", condition:{tag_id:"taggings", refrence_id:"messages"}}, tags:{type:"left", condition:{id:"tags", tag_id:"taggings"}}}, order:{field:"id", table:"messages", direction:"asc"})
-# u.fetch(fields:["usn", "content", "refrence_id", "name"], join:{users:{type:"left", condition:{user_id:"messages", id:"users"}}, taggings:{type:"left", condition:{message_id:"taggings", id:"messages"}}, tags:{type:"left", condition:{id:"tags", tag_id:"taggings"}}})
-# u.insert(fields:{usn:"test", pwd:"$2a$12$n28UR0Ml3BtcM5C7mgInG.GUUwrGCMyfrp336qXSFnmY.OSVXVL5O", privileges:0})
-# u.delete(where:{id:5})
-# u.fetch(where:{id:1})
-# u.update(fields:{usn:"linus", privileges:1}, where:{id:5})
-# Users.fetch(fields:["usn", "pwd"])

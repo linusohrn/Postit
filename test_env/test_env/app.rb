@@ -7,10 +7,6 @@ class App < Sinatra::Base
     enable :sessions
     
     def initialize
-        Users.new
-        Messages.new
-        Taggings.new
-        Tags.new
         @admin_id = "1" 
         super
     end
@@ -48,7 +44,7 @@ class App < Sinatra::Base
         end
         if params.key?(:message_filter_id) then  message_filter_id = params[:message_filter_id] 
         end
-
+        
         if params.key?(:tag_filter_id)
             filter_id = params[:tag_filter_id]
             type = "tag"
@@ -57,33 +53,39 @@ class App < Sinatra::Base
             type = "message"
         end
         # pp filter_id
-
-        if !filter_id.nil?
-            @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
-            @messages = Messages.get(field:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], 
-                join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
-            @messages = Messages.fetch(
-                fields:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], 
-                join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition{messages:"user_id", users:"id"}}}
-                )
-        else
-            @messages = Messages.get(join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
-        end
-        tags = Tags.get_tags_name_and_message_id()
         
-        @tags = Tags.get_all
-        # pp @tags
+        if !filter_id.nil?
+            # @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
+            # @messages = Messages.get(field:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], 
+            #     join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
+            @messages = Messages.fetch(fields:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}})
+            # pp @messages
+        else
+            @messages = Messages.fetch()
+        end
+        # pp "ran"
+        @tags ||= []
+        users ||= []
+        users = Users.fetch()
+        @tags = Taggings.fetch(fields:["tags.name", "taggings.message_id"], join:{tags:{type:"left", condition:{tags:"id", taggings:"tag_id"}}})
+
         @user = params[:user_id]
         
-        tags.each do |tag|
-            if !m_tag[tag['id']].nil?
-                m_tag[tag['id']] << tag['tagname']
-            else
-                m_tag[tag['id']] = [tag['tagname']]
+        @tags.each do |tagg|
+            pp tagg
+            @messages.each do |message|
+                if tagg.message_id == message.id
+                    message.tag_name = tagg.name
+                end
             end
         end
-        @messages.each do |message|
-            message['tags'] = m_tag[message['id']]
+
+        users.each do |user|
+            @messages.each do |message|
+                if user.id == message.user_id
+                    message.usn = user.usn
+                end
+            end
         end
         
         @messages.uniq!
@@ -101,16 +103,17 @@ class App < Sinatra::Base
     end
     
     post '/signup/create/?' do
-
+        
         pwd_hash = BCrypt::Password.create(params[:password])
         Users.insert(fields:{usn:params[:username], pwd:pwd_hash})
-
+        
         redirect '/'
     end
     
     post '/login/?' do 
-        user_info = Users.get_by_usn(params[:username], 'id, pwd').first
-        user_info = Users.fetch(fields:["id", "pwd"], where:{})
+        # user_info = Users.get_by_usn(params[:username], 'id, pwd').first
+        # pp params[:username]
+        user_info = Users.fetch(fields:["id", "pwd"], where:{usn:(params[:username])}).first.fields
         if user_info.nil?
             session[:login] = false
             redirect '/'
@@ -138,7 +141,9 @@ class App < Sinatra::Base
         # pp params
         tag_arr = params['tag']
         # pp tag_arr
-        Messages.create(params[:content], params[:user_id], tag_arr, params['refrence_id'])
+        # pp params
+        # Messages.create(params[:content], params[:user_id], tag_arr, params['refrence_id'])
+        Messages.new(content:params[:content], user_id:params[:user_id], refrence_id:params['refrence_id'])
         redirect "/users/#{params[:user_id]}/wall"
     end
     
