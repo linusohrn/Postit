@@ -1,0 +1,4 @@
+TODO
+
+
+Fortsätt på constructorn baserat på vilken table ett värde är hämtad. Genom att få table name i hash nyckeln

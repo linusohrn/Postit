@@ -1,15 +1,35 @@
 module StringManipulation
-
-
-    def fields_handler(fields)
+    
+    
+    def fields_handler(fields, input)
+        # p "RAN"
         # pp fields
-        if fields.first == "*"
-            @fields.each do |field|
-                pp field
-                field = @table_name + "." + field
+        # pp fields.first
+        if !input
+            if fields == "*"
+                fields = []
+                @fields.each do |field|
+                    
+                    field = @table_name[0..-2] + "." + field + " "
+                    fields << field
+                end
+                # pp fields
+                return fields.to_s.delete! '"[/]'
+            elsif fields.first.include? "."
+                # pp "ran"
+                return fields.to_s.delete! '"[/]'
+            else
+                # pp "last" 
+                raise "Please include the table name of the cells you want to select"
+            end
+        else
+            if fields == "*"
+                return fields
+            else
+                return fields.to_s.delete! '"[/]'
             end
         end
-
+        
     end
     #   TAKES NESTED ARRAY AND RETURNS AS STRING FIT FOR SQL REQUEST
     # 
@@ -56,13 +76,15 @@ module StringManipulation
         # pp if !join.empty?
         if !join.nil? && !join.empty? 
             joiner = ""
+            pp join
             join.each do |key, value|
-                # pp key
+                pp key
+                pp key[0..-2]
                 # pp value
                 if !value[:type].nil?
                     type = value[:type].upcase+" "
                 end
-                joiner += " #{type}JOIN #{key.to_s} AS #{key.to_s} ON #{value[:condition].keys.first}.#{value[:condition].values.first} = #{value[:condition].keys.last}.#{value[:condition].values.last}"
+                joiner += " #{type}JOIN #{key.to_s} AS #{key.to_s[0..-2]} ON #{value[:condition].keys.first}.#{value[:condition].values.first} = #{value[:condition].keys.last}.#{value[:condition].values.last}"
             end
             
             return joiner
@@ -127,7 +149,7 @@ module StringManipulation
             # pp input
             input.each do |key, value|
                 # pp value
-
+                
                 # pp @unique
                 if !value.nil?
                     if key.to_s != "id"
@@ -142,5 +164,5 @@ module StringManipulation
             return output
         end
     end
-
+    
 end

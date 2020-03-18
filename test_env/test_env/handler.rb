@@ -38,7 +38,7 @@ class Handler
     def fields
         @fields
     end
-    
+
     # def self.fields
     #     @fields
     # end
@@ -52,7 +52,6 @@ class Handler
         # @fields ||= {}
         @unique = self.class.unique
         args.each do |key, value|
-            # @fields[key.to_s] = value
             self.instance_variable_set("@#{key}", value)
         end
 
@@ -62,7 +61,7 @@ class Handler
     end
     
     def self.construct_object(result_hash)
-        # pp result_hash
+        pp result_hash
         if !result_hash.nil? && !result_hash.empty?
             result_hash = result_hash.to_h.keys_to_symbol
             # pp new(result_hash)
@@ -79,7 +78,7 @@ class Handler
         # pp self.methods
         @obj_arr = Array.new
         # p @obj_arr
-        execute("SELECT #{fields_handler(fields)} FROM #{@table_name} AS #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+        execute("SELECT #{fields_handler(fields, join.nil?)} FROM #{@table_name} AS #{@table_name[0..-2]}#{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
             
             #   WHAT THE ACTUAL FUCK IS HAPPENING 
             
@@ -232,7 +231,7 @@ class Handler
 end
 
 class Users < Handler
-    
+    attr_reader :id, :usn, :pwd, :privileges
     set_table_name "users"
     set_fields "id"
     set_fields "usn"
@@ -249,7 +248,7 @@ class Users < Handler
 end
 
 class Messages < Handler
-    include StringManipulation
+    attr_reader :id, :content, :refrence_id, :user_id
     set_table_name "messages"
     set_fields "id"
     set_fields "content"
@@ -265,7 +264,7 @@ class Messages < Handler
 end
 
 class Taggings < Handler
-    
+    attr_reader :message_id, :tag_id
     set_table_name "taggings"
     set_fields "message_id"
     set_fields "tag_id"
@@ -278,7 +277,7 @@ class Taggings < Handler
 end
 
 class Tags < Handler
-    
+    attr_reader :id, :name
     set_table_name "tags"
     set_fields "id"
     set_fields "name"
