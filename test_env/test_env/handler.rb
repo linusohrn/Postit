@@ -64,7 +64,11 @@ class Handler
         pp result_hash
         if !result_hash.nil? && !result_hash.empty?
             result_hash = result_hash.to_h.keys_to_symbol
-            # pp new(result_hash)
+            result_hash.each do |res_key, res_val|
+                pp res_key
+                pp res_key.to_s.rpartition(".")[0]
+                pp res_val
+            end
             return self.new(true,result_hash)
         end
     end
@@ -78,7 +82,7 @@ class Handler
         # pp self.methods
         @obj_arr = Array.new
         # p @obj_arr
-        execute("SELECT #{fields_handler(fields, join.nil?)} FROM #{@table_name} AS #{@table_name[0..-2]}#{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+        execute("SELECT #{fields_handler(fields)} FROM #{@table_name} AS '#{@table_name}'#{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
             
             #   WHAT THE ACTUAL FUCK IS HAPPENING 
             
@@ -156,14 +160,14 @@ class Handler
     def self.execute(str)
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
-        pp str
+        # pp str
         @db.execute(str)
     end
     
     def execute(str)
         @db ||= SQLite3::Database.new('db/db.db')
         @db.results_as_hash = true
-        pp str
+        # pp str
         @db.execute(str)
     end
     

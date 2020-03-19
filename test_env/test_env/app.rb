@@ -113,7 +113,7 @@ class App < Sinatra::Base
     post '/login/?' do 
         # user_info = Users.get_by_usn(params[:username], 'id, pwd').first
         # pp params[:username]
-        user_info = Users.fetch(fields:["user.id", "user.pwd"], where:{usn:(params[:username])}).first
+        user_info = Users.fetch(fields:["users.id", "users.pwd"], where:{usn:(params[:username])}).first
         if user_info.nil?
             session[:login] = false
             redirect '/'
