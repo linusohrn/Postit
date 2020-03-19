@@ -58,7 +58,7 @@ class App < Sinatra::Base
             # @messages = Messages.get_all_message_and_usn_filter(filter_id, type)
             # @messages = Messages.get(field:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], 
             #     join:['LEFT JOIN taggings ON message.id = taggings.message_id', 'INNER JOIN users ON message.user_id = user.id'])
-            @messages = Messages.fetch(fields:['message.id', 'message.content', 'message.refrence_id', 'users.usn'], join:{taggings:{type:"left", condition:{messages:"id", taggings:"message_id"}}, users:{type:"inner", condition:{messages:"user_id", users:"id"}}})
+            @messages = Messages.fetch(fields:['message.id', 'message.content', 'message.refrence_id', 'user.usn'], join:{taggings:{type:"left", condition:{message:"id", tagging:"message_id"}}, users:{type:"inner", condition:{message:"user_id", user:"id"}}})
             # pp @messages
         else
             @messages = Messages.fetch()
@@ -67,12 +67,12 @@ class App < Sinatra::Base
         @tags ||= []
         users ||= []
         users = Users.fetch()
-        @tags = Taggings.fetch(fields:["tags.name", "taggings.message_id"], join:{tags:{type:"left", condition:{tags:"id", taggings:"tag_id"}}})
+        @tags = Taggings.fetch(fields:["tag.name", "tagging.message_id"], join:{tags:{type:"left", condition:{tag:"id", tagging:"tag_id"}}})
 
         @user = params[:user_id]
         
         @tags.each do |tagg|
-            pp tagg
+            # pp tagg
             @messages.each do |message|
                 if tagg.message_id == message.id
                     message.tag_name = tagg.name
@@ -113,18 +113,18 @@ class App < Sinatra::Base
     post '/login/?' do 
         # user_info = Users.get_by_usn(params[:username], 'id, pwd').first
         # pp params[:username]
-        user_info = Users.fetch(fields:["id", "pwd"], where:{usn:(params[:username])}).first.fields
+        user_info = Users.fetch(fields:["user.id", "user.pwd"], where:{usn:(params[:username])}).first
         if user_info.nil?
             session[:login] = false
             redirect '/'
         end
         # puts "here"
-        pwd_hash = BCrypt::Password.new(user_info['pwd'])
+        pwd_hash = BCrypt::Password.new(user_info.pwd)
         # p params[:password]
         # byebug
         if pwd_hash == params[:password]
             # pp true
-            session[:user_id] = user_info['id']
+            session[:user_id] = user_info.id
             session[:login] = true
             redirect "/users/#{session[:user_id]}/wall"
         else
