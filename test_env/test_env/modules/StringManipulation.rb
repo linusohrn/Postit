@@ -1,16 +1,4 @@
 module StringManipulation
-
-
-    def fields_handler(fields)
-        # pp fields
-        if fields.first == "*"
-            @fields.each do |field|
-                pp field
-                field = @table_name + "." + field
-            end
-        end
-
-    end
     #   TAKES NESTED ARRAY AND RETURNS AS STRING FIT FOR SQL REQUEST
     # 
     #   where - Nested array with the desired conditions for SQL request. The table which the condition will be applied on can also be specified.

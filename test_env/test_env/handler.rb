@@ -79,7 +79,7 @@ class Handler
         # pp self.methods
         @obj_arr = Array.new
         # p @obj_arr
-        execute("SELECT #{fields_handler(fields)} FROM #{@table_name} AS #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
+        execute("SELECT #{fields.to_s.delete '[\"]'} FROM #{@table_name} AS #{@table_name} #{join_handler(join)}#{where_handler(where)}#{order_handler(order)}#{limit_handler(limit)};").each do |result_hash|
             
             #   WHAT THE ACTUAL FUCK IS HAPPENING 
             
