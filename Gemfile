@@ -5,5 +5,11 @@ gem 'sqlite3'
 gem 'slim'
 gem 'rerun'
 gem 'bcrypt'
-gem 'openssl'
+
+gem 'capybara', '>=3.29'
+gem 'selenium-webdriver'
+gem 'minitest'
+gem 'minitest-reporters'
+
+
 gem 'byebug'

@@ -88,3 +88,7 @@ form.reply{
     display: flex;
     flex-direction: column;
 }
+
+textarea.post-box{
+    background-color: white;
+}

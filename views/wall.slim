@@ -12,10 +12,10 @@ form action="/users/#{params[:user_id]}/wall/new" class="message-post" method="p
     textarea rows="10" cols="20" class="post-box" name="content"
     input type="hidden" name="refrence_id" value="#{@refrence_id}"
     button type="submit" class="post-box" Post it!
-    -if @user == @admin_id
+    -if @user = @admin_id
         -for tag in @tags
-            label for="#{tag['name']}" #{tag['name']}
-            input type="checkbox" name="tag[]" id="#{tag['name']}" value="#{tag['id']}"
+            label for="#{tag.name}" #{tag.name}
+            input type="checkbox" name="tag[]" id="#{tag.name}" value="#{tag.id}"
 form action="/users/#{params[:user_id]}/wall/filter" method="post"
     span Filter:
     select name="filter" onchange="this.form.submit()"
@@ -25,5 +25,23 @@ form action="/users/#{params[:user_id]}/wall/filter" method="post"
         option value="3" Release notes
 a.h1 href="wall" clear filter
 main
-    -for message in @messages
-        == slim :'messages/message', locals: {message: message, tags: @tags}
+    -for message in @all
+
+        .message id="message_id=#{message.childs.first.id}"
+            a.ids.m.essential href="?message_filter_id=#{message.childs.first.id}"= "#{message.childs.first.id}"
+            -if !message.childs.first.refrence_id.nil?
+                a.ids.m.essential href="?message_filter_id=#{message.childs.first.refrence_id}"= ">>#{message.childs.first.refrence_id}"
+            h4.usn.m.essential= "#{message.usn}"
+            p.cnt.m.essential= "#{message.childs.first.content}"
+            .tags.m
+                -if !message.childs.first.childs.first.nil? 
+                    -message.childs.first.childs.each do |tag|
+                        p.tag.m= "#{tag.name}"
+            form.reply.m action="/users/#{params[:user_id]}/wall/#{message.childs.first.id}/reply" class="replybut" method="post"
+                button type="submit" Reply
+            -if @user = @admin_id
+                form.adminbutton.m action="/users/#{params[:user_id]}/wall/#{message.childs.first.id}/delete" class="deletebut" method="post"
+                    button type="submit" delete!
+            input type="hidden" id="#{message.id}" value="localhost:9292/users/#{params[:user_id]}/wall#message_id=#{message.id}"
+            button onclick="CopyToClipboard(#{message.id})" share! 
+        / == slim :'messages/message'
